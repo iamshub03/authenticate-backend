@@ -5,6 +5,7 @@ import {
   ManyToOne,
   PrimaryGeneratedColumn,
   UpdateDateColumn,
+  Column,
 } from 'typeorm';
 import { Spam } from './spam.entity';
 import { User } from './user.entity';
@@ -22,9 +23,6 @@ export class UserSpam {
   @JoinColumn({ name: 'spam_id' })
   spam: Spam;
 
-  @CreateDateColumn()
+  @Column({ type: 'timestamp', default: () => 'CURRENT_TIMESTAMP' })
   created: Date;
-
-  @UpdateDateColumn()
-  modified: Date;
 }

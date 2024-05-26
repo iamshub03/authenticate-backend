@@ -33,9 +33,6 @@ export class UserContact {
   @Column({ default: 'user-contact' })
   type: string;
 
-  @CreateDateColumn()
+  @Column({ type: 'timestamp', default: () => 'CURRENT_TIMESTAMP' })
   created: Date;
-
-  @UpdateDateColumn()
-  modified: Date;
 }
