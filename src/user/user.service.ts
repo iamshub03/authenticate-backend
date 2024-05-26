@@ -115,6 +115,23 @@ export class UserService {
   }
 
   async markSpam(userId: number, spamData: MarkSpamDTO) {
+    const loggedInUser = await this.usersRepository.findOne({
+      where: {
+        id: userId,
+      },
+      select: {
+        id: true,
+        phone: true,
+      },
+    });
+
+    if (loggedInUser.phone === spamData.phone) {
+      return {
+        success: false,
+        code: 404,
+        message: 'You cannot mark your own number as spam',
+      };
+    }
     const spamExists = await this.spamsRepository.findOne({
       where: {
         phone: spamData.phone,
@@ -233,10 +250,10 @@ export class UserService {
     }
   }
 
-  async searchByName(search: string) {
+  async searchByName(search: string, userId: number) {
     const userStarts = await this.usersRepository.find({
       relations: ['spam'],
-      where: { name: Like(`${search}%`) },
+      where: { name: Like(`${search}%`), id: Not(userId) },
       select: {
         id: true,
         name: true,
@@ -257,7 +274,8 @@ export class UserService {
     const userContains = await this.usersRepository.find({
       where: {
         name: Like(`%${search}%`),
-        ...(userStartIds.length && { id: Not(In(userStartIds)) }),
+        ...(userStartIds.length && { id: Not(In([...userStartIds, userId])) }),
+        ...(userStartIds.length === 0 && { id: Not(userId) }),
       },
       select: {
         id: true,
@@ -274,9 +292,22 @@ export class UserService {
 
     const userPhones = users.map((user) => user.phone);
 
+    const loggedInUser = await this.usersRepository.findOne({
+      where: {
+        id: userId,
+      },
+      select: {
+        id: true,
+        phone: true,
+      },
+    });
+
     const userContactStarts = await this.userContactsRepository.find({
       relations: ['spam'],
-      where: { name: Like(`${search}%`), phone: Not(In(userPhones)) },
+      where: {
+        name: Like(`${search}%`),
+        phone: Not(In([...userPhones, loggedInUser.phone])),
+      },
       select: {
         id: true,
         name: true,
@@ -298,7 +329,7 @@ export class UserService {
       where: {
         name: Like(`%${search}%`),
         ...(userContactStartIds.length && { id: Not(In(userContactStartIds)) }),
-        phone: Not(In(userPhones)),
+        phone: Not(In([...userPhones, loggedInUser.phone])),
       },
       select: {
         id: true,
@@ -333,7 +364,24 @@ export class UserService {
     }
   }
 
-  async searchByPhone(phone: number) {
+  async searchByPhone(phone: number, userId: number) {
+    const loggedInUser = await this.usersRepository.findOne({
+      where: {
+        id: userId,
+      },
+      select: {
+        id: true,
+        phone: true,
+      },
+    });
+
+    if (loggedInUser.phone === phone) {
+      return {
+        success: false,
+        code: 404,
+        message: 'You have searched your own number',
+      };
+    }
     //CHECK IF REGISTERED
     const user = await this.usersRepository.findOne({
       where: {

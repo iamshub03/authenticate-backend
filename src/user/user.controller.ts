@@ -68,8 +68,12 @@ export class UserController {
     name: 'search',
   })
   @Get('search-name')
-  async searchByName(@Res() res: Response, @Query('search') search: string) {
-    const response = await this.userService.searchByName(search);
+  async searchByName(
+    @Req() req,
+    @Res() res: Response,
+    @Query('search') search: string,
+  ) {
+    const response = await this.userService.searchByName(search, req.user.id);
 
     if (response.success) {
       res.statusCode = response.code;
@@ -98,9 +102,13 @@ export class UserController {
     name: 'phone',
   })
   @Get('search-phone')
-  async searchByPhone(@Res() res: Response, @Query('phone') phone: string) {
-    const response = await this.userService.searchByPhone(+phone);
-    console.log('res', response);
+  async searchByPhone(
+    @Req() req,
+    @Res() res: Response,
+    @Query('phone') phone: string,
+  ) {
+    const response = await this.userService.searchByPhone(+phone, req.user.id);
+
     if (response.success) {
       res.statusCode = response.code;
       res.send({
